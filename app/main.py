@@ -1,6 +1,7 @@
 
 from fastapi import FastAPI
-from app.api.routes import chat, chat_history
+from app.api.routes import chat
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Brain AI Backend API",
@@ -9,7 +10,14 @@ app = FastAPI(
 )
 
 app.include_router(chat.router)
-app.include_router(chat_history.router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get('/')
 def root():

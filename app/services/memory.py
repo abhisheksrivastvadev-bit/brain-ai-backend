@@ -1,25 +1,23 @@
-
-## This is for shprt-term memory, in this case conversation is storing into the RAM, if uvicorn server restart or crash then memory will disappear, LLM no longer remember the previous conversation.
-
-## In production we will use Redis or database for storing the conversation history
+## Short-term memory (RAM-based)
+## In production we will use Redis or database for storing conversation history
 
 conversations = {}
 
 def getConversationHistory(session_id: str):
-
     if session_id not in conversations:
-        conversations[session_id]= []
-
+        conversations[session_id] = []
     return conversations[session_id]
 
-def saveConversationHistory(session_id: str,role: str, content: str):
-
+def saveConversationHistory(session_id: str, role: str, content: str, image_url: str = None):
     if session_id not in conversations:
-        conversations[session_id]= []
+        conversations[session_id] = []
     
-    conversations[session_id].append({
+    item = {
         "role": role,
         "content": content
-    })
+    }
+    if image_url:
+        item["image_url"] = image_url
 
-    print("saveConversationHistory",conversations)
+    conversations[session_id].append(item)
+    print("saveConversationHistory:", f"[{role}] {content[:40]}... (image: {bool(image_url)})")
