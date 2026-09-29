@@ -1,5 +1,6 @@
 
 
+from app.core.security import create_access_token
 from app.core.security import verify_password
 from app.db import database
 from app.core.security import hash_password
@@ -46,13 +47,17 @@ def register(
     db.commit()
     db.refresh(user)
 
+    access_token= create_access_token(user.user_id)
+
     return {
         "success":True,
         "message": "Registration successful",
         "user": {
             "user_id":user.user_id,
             "name": user.name,
-            "email": user.email
+            "email": user.email,
+            "access_token": access_token,
+            "token_type": "bearer",
         }
     }
 
@@ -77,6 +82,7 @@ def login(
             status_code=400,
             detail="Invalid password"
         )
+    access_token= create_access_token(retreive_data_from_DB.user_id)
 
     return{
         "success":True,
@@ -84,6 +90,8 @@ def login(
         "user": {
             "user_id": retreive_data_from_DB.user_id,
             "name": retreive_data_from_DB.name,
-            "email": retreive_data_from_DB.email
+            "email": retreive_data_from_DB.email,
+            "access_token": access_token,
+            "token_type": "bearer",
         }
     }
