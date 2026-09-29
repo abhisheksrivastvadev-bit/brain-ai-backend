@@ -133,6 +133,7 @@ def chat(request: charRequest):
         )
 
         api_response = response.choices[0].message.content
+        print("api_response",response)
 
         saveConversationHistory(
             request.session_id,
