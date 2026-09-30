@@ -1,13 +1,16 @@
+from sqlalchemy.orm import Session
+from app.models.conversation import Conversation
+from app.db.database import get_db
 import io
 import base64
 import re
 import os
 from typing import Tuple
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 
-from app.services.memory import saveConversationHistory, getConversationHistory
+from app.services.memory import saveConversationHistory, getConversationHistory, getAllConversationHistory
 from app.schemas.chat import charRequest, chatResponse
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -56,11 +59,17 @@ def generate_image_flux(prompt: str) -> str:
     return f"data:image/jpeg;base64,{b64_str}"
 
 @router.post("/", response_model=chatResponse)
-def chat(request: charRequest):
+def chat(
+    request: charRequest,
+    db: Session= Depends(get_db)
+    ):
+
     try:
-        conversation = getConversationHistory(request.session_id)
+        conversation = getConversationHistory(db, request.user_id, request.session_id)
 
         saveConversationHistory(
+            db,
+            request.user_id,
             request.session_id,
             "user",
             request.message
@@ -75,6 +84,8 @@ def chat(request: charRequest):
                 response_text = f"Here is the generated image for: **{img_prompt}**\n\n![{img_prompt}]({image_data_url})"
                 
                 saveConversationHistory(
+                    db,
+                    request.user_id,
                     request.session_id,
                     "assistant",
                     response_text,
@@ -136,6 +147,8 @@ def chat(request: charRequest):
         print("api_response",response)
 
         saveConversationHistory(
+            db,
+            request.user_id,
             request.session_id,
             "assistant",
             api_response
@@ -151,9 +164,13 @@ def chat(request: charRequest):
         }
 
 @router.get("/history")
-def getChatHistory(session_id: str):
+def getChatHistory(
+    user_id: str,
+    db: Session= Depends(get_db)
+    ):
     try:
-        conversation = getConversationHistory(session_id)
+        conversation = getAllConversationHistory(db, user_id)
+        print(conversation)
         return {
             "success": True,
             "message": "conversation history",
@@ -167,5 +184,37 @@ def getChatHistory(session_id: str):
             "message": f"error in api call {e}",
             "data": {
                 "conversation": []
+            }
+        }
+
+@router.get("/history/{session_id}")
+def getConversationMessages(
+    session_id: str,
+    user_id: str,
+    db: Session = Depends(get_db)
+):
+    try:
+
+        messages = getConversationHistory(
+            db,
+            user_id,
+            session_id
+        )
+
+        return {
+            "success": True,
+            "message": "conversation messages",
+            "data": {
+                "messages": messages
+            }
+        }
+
+    except Exception as e:
+
+        return {
+            "success": False,
+            "message": f"error in api call {e}",
+            "data": {
+                "messages": []
             }
         }
