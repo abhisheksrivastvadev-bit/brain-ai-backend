@@ -12,6 +12,8 @@ from huggingface_hub import InferenceClient
 
 from app.services.memory import saveConversationHistory, getConversationHistory, getAllConversationHistory
 from app.schemas.chat import charRequest, chatResponse
+from langsmith import traceable
+
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -19,6 +21,9 @@ load_dotenv()
 
 hf_token = os.getenv("Hugging_Face_Api_Key")
 client = InferenceClient(api_key=hf_token)
+
+MODEL = "meta-llama/Llama-3.1-8B-Instruct"
+
 
 def detect_image_request(message: str) -> Tuple[bool, str]:
     """
@@ -57,6 +62,19 @@ def generate_image_flux(prompt: str) -> str:
     img.save(buffered, format="JPEG", quality=85)
     b64_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return f"data:image/jpeg;base64,{b64_str}"
+
+
+@traceable(name="LLM Conversation")
+def ask_llm(messages: list):
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=messages,
+        temperature=0.7,
+        max_tokens=200
+    )
+
+    return response.choices[0].message.content
 
 @router.post("/", response_model=chatResponse)
 def chat(
@@ -138,12 +156,14 @@ def chat(
             system_prompt
         ]
 
-        response = client.chat.completions.create(
-            model="meta-llama/Llama-3.1-8B-Instruct",
-            messages=messages
-        )
+        response = ask_llm(messages)
 
-        api_response = response.choices[0].message.content
+        # response = client.chat.completions.create(
+        #     model=MODEL,
+        #     messages=messages
+        # )
+
+        # api_response = response.choices[0].message.content
         print("api_response",response)
 
         saveConversationHistory(
@@ -151,11 +171,11 @@ def chat(
             request.user_id,
             request.session_id,
             "assistant",
-            api_response
+            response
         )
 
         return {
-            "message": api_response
+            "message": response
         }
     except Exception as e:
         print(f"[chat] Error: {e}")

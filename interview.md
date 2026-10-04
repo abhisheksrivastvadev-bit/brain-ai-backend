@@ -146,6 +146,13 @@
     * one-shot prompt
     * few-shot prompt
 
+## Guardrails
+- Guardrails validate/control what actually goes into and comes out of the LLM pipeline.
+- It is a saftey mechanism to prevent the model from generating harmful content.
+- Gaurdrails create a boundaries/lines between input and output.
+- It perform checks and validation on user input and agent output.
+
+**Top-K:** means selecting the K most relevant results from the search results.
 
 difference between git merge and git rebase 
 Git cherry-pick
@@ -190,5 +197,7 @@ Attention Mechanism
 kv cache
 
 QKV
+
+evals
 
 
