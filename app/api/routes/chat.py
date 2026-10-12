@@ -14,9 +14,7 @@ from huggingface_hub import InferenceClient
 from app.services.memory import saveConversationHistory, getConversationHistory, getAllConversationHistory
 from app.schemas.chat import chatRequest, chatResponse
 from langsmith import traceable
-from openai import OpenAI
-
-
+from app.services.llm_service import generate_response
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -72,14 +70,15 @@ def generate_image_flux(prompt: str) -> str:
 @traceable(name="LLM Conversation")
 def ask_llm(messages: list):
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-        temperature=0.7,
-        max_tokens=200
-    )
+    # response = client.chat.completions.create(
+    #     model=MODEL,
+    #     messages=messages,
+    #     temperature=0.7,
+    #     max_tokens=200
+    # )
+    response = generate_response(messages)
     
-    return response.choices[0].message.content
+    return response
 
 @router.post("/", response_model=chatResponse)
 def chat(
@@ -156,13 +155,12 @@ def chat(
                     "content": c_clean
                 })
 
-            messages = clean_history + [
+            messages = [system_prompt] + clean_history + [
                 {
                     "role": "user",
                     "content": request.message
-                },
-                system_prompt
-            ]
+                }
+            ]   
 
             response = ask_llm(messages)
 
