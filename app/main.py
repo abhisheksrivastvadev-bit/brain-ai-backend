@@ -2,7 +2,7 @@
 from app.db.database import Base, engine
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import chat, auth
+from app.api.routes import chat, auth, rag
 
 app = FastAPI(
     title="Brain AI Backend API",
@@ -12,6 +12,7 @@ app = FastAPI(
 
 app.include_router(chat.router)
 app.include_router(auth.router)
+app.include_router(rag.router)
 
 app.add_middleware(
     CORSMiddleware,

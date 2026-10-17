@@ -69,15 +69,7 @@ def generate_image_flux(prompt: str) -> str:
 
 @traceable(name="LLM Conversation")
 def ask_llm(messages: list):
-
-    # response = client.chat.completions.create(
-    #     model=MODEL,
-    #     messages=messages,
-    #     temperature=0.7,
-    #     max_tokens=200
-    # )
     response = generate_response(messages)
-    
     return response
 
 @router.post("/", response_model=chatResponse)
@@ -161,17 +153,7 @@ def chat(
                     "content": request.message
                 }
             ]   
-
             response = ask_llm(messages)
-
-            # response = client.chat.completions.create(
-            #     model=MODEL,
-            #     messages=messages
-            # )
-
-            # api_response = response.choices[0].message.content
-            print("api_response",response)
-
             saveConversationHistory(
                 db,
                 user_id,
